@@ -1,0 +1,173 @@
+<!DOCTYPE HTML> 
+<html> 
+ 
+<head>
+	<style>
+	table {
+	  font-family: arial, sans-serif;
+	  position: relative;
+	  border-collapse: collapse;
+	  width: 100%;
+	}
+
+	td {
+	  border: 1px solid #000000;
+	  text-align: left;
+	  padding: 8px;
+	}
+	
+	th {
+	  border: 1px solid #000000;
+	  background-color: #dddddd;
+      position: sticky;
+      top: 0; /* Don't forget this, required for the stickiness */
+      box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
+    }
+	
+	thead {
+    position: sticky;
+    top: 0px;
+	}
+
+	tr:nth-child(even) {
+	  background-color: #dddddd;
+	}
+
+	</style>
+    <title>
+        Kankakee County COVID Data
+    </title>
+	<script src=
+"https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js">
+    </script>
+	
+	<table id="table" align = "center" border="1"></table>
+<script>
+
+var getJSON = function(url, callback) {
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.responseType = 'json';
+    
+    xhr.onload = function() {
+    
+        var status = xhr.status;
+        
+        if (status == 200) {
+            callback(null, xhr.response);
+        } else {
+            callback(status);
+        }
+    };
+    
+    xhr.send();
+};
+
+	getJSON('https://idph.illinois.gov/DPHPublicInformation/api/COVID/GetCountyHistorical?countyName=Kankakee',  function(err, data) {
+    
+    if (err != null) {
+        console.error(err);
+    } else {
+		//Change Column Names
+		for (var i = 0; i < data.values.length; i++) {
+			console.log(data.values[i]);
+			data.values[i]['Date'] = data.values[i]['ReportDate'];
+			data.values[i]['New Tests'] = data.values[i]['TotalTestedChange'];
+			data.values[i]['New Cases'] = data.values[i]['CasesChange'];
+			if(data.values[i]['TotalTestedChange'] > 0){
+				data.values[i]['Positivity Rate'] = (100 * data.values[i]['CasesChange'] / data.values[i]['TotalTestedChange']).toFixed(2) + "%"
+			}
+			else{
+				data.values[i]['Positivity Rate'] = 0 + "%"
+			}
+			data.values[i]['New Deaths'] = data.values[i]['DeathsChange'];
+			
+			console.log(data.values[i]);
+		}
+		console.log(data.values);
+	
+		var cols = [];
+             
+        for (var i = 0; i < data.values.length; i++) {
+            for (var k in data.values[i]) {
+                if (cols.indexOf(k) === -1) {
+					if(k === "Date" || 
+					   k === "New Cases" || 
+					   k === "New Tests" || 
+					   k === "New Deaths" ||
+					   k === "Positivity Rate"){
+						console.log(k);
+						// Push all keys to the array
+						cols.push(k);
+					}
+                }
+            }
+        }
+		console.log(cols);
+		
+		// Create a table element
+        var table = document.createElement("table");
+		
+        // Create table row tr element of a table
+		var tblHead = document.createElement("thead");
+        var tr = tblHead.insertRow(-1);  
+        for (var i = 0; i < cols.length; i++) {
+            // Create the table header th element
+            var theader = document.createElement("th");
+            theader.innerHTML = cols[i];
+                 
+            // Append columnName to the table row
+			tr.appendChild(theader);
+        }
+		table.appendChild(tblHead);
+		
+		// Adding the data to the table
+        var tblBody = document.createElement("tbody");
+        for (var i = data.values.length - 1; i >= 0; i--) {
+                 
+            // Create a new row
+            trow = tblBody.insertRow(-1);
+            for (var j = 0; j < cols.length; j++) {
+				if(cols[j] == "Date" || "CasesChange" || "TotalTestedChange" || "DeathsChange"){
+					var cell = trow.insertCell(-1);
+					if(cols[j] === "Date"){
+						let today = new Date(data.values[i][cols[j]]);
+						let dd = today.getDate();
+
+						let mm = today.getMonth()+1; 
+						const yyyy = today.getFullYear();
+						if(dd<10) 
+						{
+							dd=`0${dd}`;
+						} 
+
+						if(mm<10) 
+						{
+							mm=`0${mm}`;
+						} 
+						displayDate = `${mm}/${dd}/${yyyy}`;
+						// Inserting the cell at particular place
+						cell.innerHTML = displayDate;
+					}
+					else {
+						// Inserting the cell at particular place
+						cell.innerHTML = data.values[i][cols[j]];
+					}
+				}
+            }
+        }
+		table.appendChild(tblBody);
+             
+        // Add the newly created table containing json data
+        var el = document.getElementById("table");
+        el.innerHTML = "";
+        el.appendChild(table);
+    }
+	});
+
+</script>
+
+</body> 
+ 
+</html>
